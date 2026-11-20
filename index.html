@@ -1,0 +1,526 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sổ tay BOT Sakuko</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<style>
+/* Bố cục: màn đăng nhập một cột; sau đăng nhập là thanh mục lục bên trái + bài đọc bên phải (xếp dọc trên điện thoại). Màu lấy theo màu các thẻ BOT thật: xanh = ổn, cam = nhắc, đỏ = quá hạn. */
+:root{
+  --bg:#f3f6f8; --panel:#ffffff; --fg:#14232e; --muted:#5a6b78; --line:#d9e1e7;
+  --brand:#0f5c6e; --brand-soft:#dcedf1; --brand-fg:#ffffff;
+  --ok:#1b7a4b; --ok-soft:#dff3e8; --warn:#b4600a; --warn-soft:#fdeed9; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e171d; --panel:#16232b; --fg:#e6eef2; --muted:#9db0bc; --line:#2a3b46;
+  --brand:#5cc0d6; --brand-soft:#173843; --brand-fg:#0a1a20;
+  --ok:#6fd3a1; --ok-soft:#173a2a; --warn:#f0b36a; --warn-soft:#3d2b12; --bad:#f19a93; --bad-soft:#40201d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e171d; --panel:#16232b; --fg:#e6eef2; --muted:#9db0bc; --line:#2a3b46;
+  --brand:#5cc0d6; --brand-soft:#173843; --brand-fg:#0a1a20;
+  --ok:#6fd3a1; --ok-soft:#173a2a; --warn:#f0b36a; --warn-soft:#3d2b12; --bad:#f19a93; --bad-soft:#40201d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px}
+h1,h2,h3{text-wrap:balance;line-height:1.25;margin:0}
+p{margin:0 0 .8em;max-width:68ch}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto}
+
+/* login */
+.login{max-width:440px;margin:6vh auto 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px}
+.login h1{font-size:26px;margin-bottom:6px}
+.login .sub{color:var(--muted);margin-bottom:22px}
+label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.btn{background:var(--brand);color:var(--brand-fg);border:0;border-radius:8px;padding:12px 18px;font-weight:600}
+.btn.full{width:100%;margin-top:20px}
+.btn.ghost{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+.btn[disabled]{opacity:.5;cursor:default}
+.err{color:var(--bad);font-size:14px;margin-top:10px;min-height:1.2em}
+.note{font-size:13px;color:var(--muted);margin-top:16px}
+
+/* app */
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+.top .who{font-weight:600}
+.top .who span{color:var(--muted);font-weight:400}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:140px;flex:1;max-width:320px}
+.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;align-items:start}
+.toc{position:sticky;top:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px}
+.toc button{display:flex;width:100%;gap:10px;align-items:center;text-align:left;background:none;border:0;padding:10px;border-radius:8px;font-size:14px}
+.toc button[aria-current="true"]{background:var(--brand-soft);font-weight:600}
+.dot{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px}
+.done .dot{background:var(--ok);border-color:var(--ok);color:#fff}
+article{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px;min-width:0}
+article h2{font-size:24px;margin-bottom:6px}
+article .lead{color:var(--muted);font-size:17px;margin-bottom:18px}
+article h3{font-size:17px;margin:24px 0 8px}
+ul{padding-left:1.2em;margin:0 0 1em;max-width:68ch}
+li{margin-bottom:.35em}
+.callout{border-radius:10px;padding:14px 16px;margin:16px 0;background:var(--brand-soft);max-width:68ch}
+.callout.ok{background:var(--ok-soft)} .callout.warn{background:var(--warn-soft)} .callout.bad{background:var(--bad-soft)}
+.callout b{display:block;margin-bottom:2px}
+.foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;border-top:1px solid var(--line);margin-top:28px;padding-top:18px}
+.read{font-size:14px;color:var(--ok);font-weight:600}
+
+/* mini card mockups */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin:14px 0}
+.mc{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;min-width:0}
+.mc header{padding:8px 12px;font-weight:700;font-size:13px;color:#fff}
+.mc.blue header{background:#1d6fa5}.mc.orange header{background:#c76a0a}.mc.red header{background:#b3261e}.mc.green header{background:#1b7a4b}.mc.grey header{background:#5d6b75}
+.mc .body{padding:10px 12px;font-size:13.5px;flex:1}
+.mc .body p{margin:0 0 .4em}
+.mc .what{border-top:1px dashed var(--line);padding:9px 12px;font-size:13.5px}
+.mc .what b{color:var(--brand)}
+.mc .btns{display:flex;gap:6px;margin-top:6px}
+.mc .btns span{border:1px solid var(--line);border-radius:6px;padding:2px 9px;font-size:12.5px;background:var(--panel)}
+
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.scroll{overflow-x:auto}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px;max-width:68ch}
+summary{cursor:pointer;font-weight:600}
+details p{margin:8px 0 0}
+
+/* dashboard */
+.dash td.s{white-space:nowrap}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12.5px;font-weight:600}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.no{background:var(--bad-soft);color:var(--bad)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 18px}
+.stats div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 16px}
+.stats b{font-size:22px;display:block}
+
+@media (max-width:760px){
+  .layout{grid-template-columns:1fr}
+  .toc{position:static;display:flex;overflow-x:auto;gap:2px}
+  .toc button{white-space:nowrap;width:auto}
+  article{padding:18px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<!-- ============ ĐĂNG NHẬP ============ -->
+<section id="loginView" hidden>
+  <form class="login" id="loginForm" autocomplete="off">
+    <h1>Sổ tay làm việc với BOT</h1>
+    <p class="sub">Dành cho cửa hàng, ASM và TCKT của Sakuko. Đọc xong khoảng 10 phút, bạn sẽ biết mỗi thẻ BOT gửi có nghĩa gì và cần làm gì.</p>
+    <label for="vaiTro">Bạn là</label>
+    <select id="vaiTro"><option value="ch">Cửa hàng</option><option value="asm">ASM</option><option value="tckt">TCKT</option></select>
+    <div id="boxMa">
+      <label for="maCH">Mã cửa hàng</label>
+      <input id="maCH" list="dsCH" placeholder="Ví dụ: S1006">
+      <datalist id="dsCH"></datalist>
+    </div>
+    <label for="tenNV">Họ và tên người đọc</label>
+    <input id="tenNV" list="dsNV" placeholder="Họ và tên của bạn" required>
+    <datalist id="dsNV"></datalist>
+    <div class="err" id="loginErr" role="alert"></div>
+    <button class="btn full" type="submit">Vào đọc hướng dẫn</button>
+    <p class="note">Tên và các mục đã đọc chỉ lưu trên máy của bạn. Sau khi đọc xong, nhớ bấm “Tôi đã đọc” trên thẻ BOT trong Lark.</p>
+  </form>
+</section>
+
+<!-- ============ NỘI DUNG ============ -->
+<section id="appView" hidden>
+  <div class="top">
+    <div class="who" id="who"></div>
+    <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+    <div id="progressTxt" style="font-size:14px;color:var(--muted)"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn ghost" id="btnAdmin" hidden>Theo dõi cửa hàng</button>
+      <button class="btn ghost" id="btnOut">Thoát</button>
+    </div>
+  </div>
+  <div class="layout">
+    <nav class="toc" id="toc" aria-label="Mục lục"></nav>
+    <article id="doc" tabindex="-1"></article>
+  </div>
+</section>
+
+<!-- ============ THEO DÕI (quản lý) ============ -->
+<section id="adminView" hidden>
+  <div class="top">
+    <h1 style="font-size:24px">Cửa hàng đã đọc đến đâu</h1>
+    <button class="btn ghost" id="btnBack">Quay lại hướng dẫn</button>
+  </div>
+  <article class="dash">
+    <div class="stats" id="stats"></div>
+    <div class="scroll"><table><thead><tr><th>Cửa hàng</th><th>Người đọc</th><th>Đã đọc</th><th>Lần cuối</th><th>Trạng thái</th></tr></thead><tbody id="rows"></tbody></table></div>
+    <p class="note" id="adminNote"></p>
+  </article>
+</section>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* Danh sách mã cửa hàng gợi ý (lấy từ các lượt đối soát gần đây). Người đọc vẫn có thể gõ mã khác. */
+var DS_CH=[];
+
+/* Danh sách ASM và TCKT có sẵn để bảng theo dõi hiện cả người chưa vào đọc. Thêm người mới ở đây. */
+var DS_NV={asm:[],tckt:[]};
+
+/* ===== nội dung các mục ===== */
+function card(cls,title,body,what){
+  return '<div class="mc '+cls+'"><header>'+title+'</header><div class="body">'+body+'</div><div class="what"><b>Ý nghĩa:</b> '+what+'</div></div>';
+}
+function explainHtml(){return ''+
+'<h2>Đã nộp đủ, đã giải trình trên base mà BOT vẫn nhắc?</h2>'+
+'<p class="lead">Đây là câu hỏi cửa hàng gặp nhiều nhất. Có hai lý do và cả hai đều có cách xử lý nhanh.</p>'+
+'<h3>Lý do 1: nộp đủ tiền và xác nhận doanh thu là hai việc khác nhau</h3>'+
+'<p>BOT tự nhìn được <b>tiền đã về</b> qua sao kê ngân hàng. Nhưng BOT không tự biết <b>số doanh thu cửa hàng khai có đúng với thực tế không</b>. Số trên thẻ 9h lấy từ hệ thống bán hàng, và chỉ cửa hàng biết ngày hôm đó có đơn huỷ, đổi hàng, ghi nhầm hình thức thanh toán hay không.</p>'+
+'<p>Tiền về khớp chưa chắc số khai đã đúng. Có trường hợp hai bên cùng sai nên nhìn vẫn khớp. Vì vậy BOT cần một dấu xác nhận của người cửa hàng, ghi rõ ai xác nhận và lúc nào, để TCKT dựa vào đó hạch toán. Chưa có dấu này thì BOT vẫn tính là <b>chưa xác nhận</b>, dù tiền đã đủ.</p>'+
+'<div class="callout ok"><b>Cách xử lý, mất 1 giây</b>Nếu số trên thẻ đúng, bấm <b style="display:inline">✅ Đúng</b>. Không cần gõ gì thêm.</div>'+
+'<h3>Lý do 2: BOT chỉ nhận giải trình qua tin nhắn với BOT, không đọc ghi chú trên base</h3>'+
+'<p>Base là bảng nhiều người cùng mở và sửa. Ô ghi chú trên base không cho biết ai viết, viết lúc nào, cho ngày doanh thu nào, và có phải là lời giải trình chính thức không. Một câu như “đã giải trình trên base” cũng không nói được nguyên nhân là gì. TCKT cần nguyên nhân cụ thể để duyệt.</p>'+
+'<p>Vì vậy BOT chỉ tính là đã giải trình khi cửa hàng <b>trả lời trực tiếp tin của BOT</b>, có nội dung rõ ràng. Ghi trên base thì BOT vẫn coi là chưa giải trình và sẽ hỏi lại.</p>'+
+'<div class="callout warn"><b>Cách xử lý</b>Reply tin của BOT, chép lại ngắn gọn điều bạn đã ghi trên base: lý do, số tiền, mã đơn nếu có, ảnh chứng từ nếu có. Ví dụ: <code>chênh 52.000đ do khách trả thiếu, đã thu bù hôm sau, đơn SAKUKO1017622</code>.</div>'+
+'<h3>Nếu đã bấm hoặc đã trả lời mà BOT vẫn nhắc</h3>'+
+'<ul><li>Thẻ nhắc đôi khi chưa kịp cập nhật. Thẻ nhắc sẽ tự đổi sang “ĐÃ XỬ LÝ” khi BOT ghi nhận xong.</li>'+
+'<li>Câu trả lời có thể chưa đủ ý (thiếu số tiền, thiếu lý do, hoặc chỉ ghi “sai” mà không nói ngày). Đọc câu BOT hỏi lại và trả lời đủ trong một tin.</li>'+
+'<li>Nếu bạn chắc chắn đã trả lời đủ mà vẫn bị nhắc, chụp màn hình thẻ và nhắn người phụ trách kỹ thuật ở mục “Liên hệ”.</li></ul>'+
+'<div class="callout"><b>BOT không nhắc để làm khó</b>Nhắc theo chuỗi thường, cam, đỏ chỉ để việc xác nhận không bị bỏ sót. Khi bạn trả lời xong thì nhắc dừng.</div>'}
+function lienHeHtml(){return ''+
+'<h2>Liên hệ khi cần hỗ trợ</h2>'+
+'<p class="lead">Gặp lỗi, thẻ hiện sai hoặc BOT không phản hồi, hãy nhắn người phụ trách kỹ thuật BOT.</p>'+
+'<div class="callout ok"><b>Võ Huỳnh Nhật An</b>Người phụ trách kỹ thuật BOT. Nhắn riêng trên Lark.</div>'+
+'<h3>Nhắn gì để được xử lý nhanh</h3>'+
+'<ul><li>Mã cửa hàng và ngày doanh thu bị ảnh hưởng.</li><li>Ảnh chụp thẻ hoặc tin BOT gửi.</li><li>Bạn đã bấm hay đã trả lời gì, vào giờ nào.</li></ul>'+
+'<p>Mọi tin BOT gửi và nhận đều được lưu lại ở nhóm kỹ thuật, nên người phụ trách có thể xem lại đúng chỗ bạn gặp vấn đề.</p>'+
+'<p>Việc liên quan đến số tiền, duyệt hay từ chối giải trình thuộc về phòng TCKT, không thuộc người phụ trách kỹ thuật BOT.</p>'}
+
+var CH=[
+{id:"s1",ten:"BOT là gì, vì sao nhắn bạn",html:function(){return ''+
+'<h2>BOT là gì, vì sao nhắn bạn</h2>'+
+'<p class="lead">BOT là trợ lý trên Lark giúp đối chiếu tiền mặt cửa hàng đã thu với tiền thực tế về tài khoản công ty.</p>'+
+'<h3>Việc BOT làm mỗi ngày</h3>'+
+'<ul><li>Lấy doanh thu ngày hôm qua của cửa hàng, gửi cho bạn xem.</li>'+
+'<li>Lấy tiền mặt đã về tài khoản ngân hàng, so với số cửa hàng khai.</li>'+
+'<li>Nếu khớp thì đóng. Nếu lệch thì hỏi cửa hàng lý do, gom chứng từ rồi chuyển cho phòng Tài chính kế toán (TCKT).</li></ul>'+
+'<div class="callout ok"><b>BOT chỉ trình bày số liệu</b>BOT không kết luận ai đúng ai sai, không chia tiền, không đề xuất ai chịu. TCKT là người xem xét và quyết định.</div>'+
+'<h3>Vì sao phải có bước này</h3>'+
+'<p>Tiền thu tại cửa hàng được nộp vào ngân hàng vào ngày hôm sau. Nếu số tiền về khác số thu, nguyên nhân thường rất đời thường: đơn khách trả bằng ZaloPay nhưng ghi nhầm là tiền mặt, nộp thiếu rồi nộp bù hôm sau, phí nộp tiền, tiền cọc của khách nộp lẫn vào. Chỉ cửa hàng biết chuyện đã xảy ra. BOT hỏi để ghi lại đúng sự việc, tránh để TCKT phải đoán.</p>'+
+'<div class="callout"><b>Số đúng thì rất nhẹ</b>Nếu số BOT gửi đã đúng, bạn chỉ cần bấm <b style="display:inline">✅ Đúng</b>. Không phải gõ gì thêm.</div>'}},
+
+{id:"s2",ten:"Một ngày làm việc với BOT",html:function(){return ''+
+'<h2>Một ngày làm việc với BOT</h2>'+
+'<p class="lead">Mỗi ngày bạn sẽ nhận các tin ở những giờ cố định. Biết giờ nào là tin gì thì không bị bất ngờ.</p>'+
+'<div class="scroll"><table><thead><tr><th>Giờ</th><th>BOT làm gì</th><th>Bạn cần làm gì</th></tr></thead><tbody>'+
+'<tr><td class="s">8h30</td><td>Quét lại các ngày chưa xong. Cửa hàng chưa trả lời từ hôm qua nhận thẻ màu cam.</td><td>Trả lời thẻ cam nếu có.</td></tr>'+
+'<tr><td class="s">9h00</td><td>Gửi thẻ xác nhận doanh thu của <b>ngày hôm trước</b>.</td><td>Số đúng thì bấm Đúng. Số khác thì ghi số thực thu và bấm Sai.</td></tr>'+
+'<tr><td class="s">12h00</td><td>Nhắc thẻ đỏ cho các ngày đã quá hạn.</td><td>Xử lý ngay thẻ đỏ.</td></tr>'+
+'<tr><td class="s">15h00</td><td>Cập nhật tiền đã về, chưa chốt.</td><td>Không cần làm gì.</td></tr>'+
+'<tr><td class="s">17h00</td><td>Hạn phản hồi thẻ 9h. Nhắc nếu chưa trả lời.</td><td>Trả lời trước 17h.</td></tr>'+
+'</tbody></table></div>'+
+'<h3>Hạn phản hồi</h3>'+
+'<p>Thẻ doanh thu ngày D gửi lúc 9h ngày D+1. Hạn trả lời là <b>17h00 ngày D+1</b>. Quá hạn thì sáng hôm sau đổi sang cam, đến 12h trưa chưa xong thì đổi sang đỏ và nhắc mỗi ngày đến khi xong.</p>'+
+'<h3>Thứ Bảy, Chủ nhật và ngày lễ</h3>'+
+'<ul><li>Ngân hàng nghỉ Chủ nhật nên tiền mặt Thứ 7 và Chủ nhật được nộp chung vào Thứ 2.</li>'+
+'<li>Sáng Thứ 2 bạn nhận <b>một thẻ chung</b> có nút riêng cho từng ngày. Hạn 17h00 Thứ 2, đỏ từ 12h Thứ 3.</li>'+
+'<li>Chủ nhật BOT chỉ nhờ xác nhận doanh thu, không đòi tiền về.</li></ul>'}},
+
+{id:"s3",ten:"Các thẻ và ý nghĩa",html:function(){return ''+
+'<h2>Các thẻ BOT gửi và ý nghĩa</h2>'+
+'<p class="lead">Màu thẻ cho biết mức khẩn. Đọc dòng tiêu đề trước, rồi đọc phần cần làm ở cuối thẻ.</p>'+
+'<div class="cards">'+
+card('blue','XÁC NHẬN DOANH THU · 9h','<p>Tổng doanh thu, tiền mặt, thẻ, ZaloPay. Tiền mặt thực về và chênh lệch.</p><div class="btns"><span>✅ Đúng</span><span>❌ Sai</span></div>','BOT hỏi số cửa hàng khai đã đúng chưa. Đây là thẻ đầu tiên của mỗi ngày.')+
+card('blue','NHẮC · XÁC NHẬN DOANH THU · 17h','<p>Cửa hàng chưa xác nhận doanh thu ngày D. Có ghi hạn cuối.</p>','Nhắc nhẹ. Chưa quá hạn, vẫn còn thời gian xử lý.')+
+card('orange','CHƯA PHẢN HỒI · 8h30','<p>Cửa hàng chưa trả lời BOT từ hôm qua. Hạn cuối 12h00 hôm nay.</p>','Cảnh báo sắp quá hạn. Trả lời trước 12h để không chuyển đỏ.')+
+card('red','QUÁ HẠN · trễ N ngày','<p>Đã quá hạn giải trình hoặc xác nhận. Nhắc mỗi ngày lúc 12h và 17h.</p>','Cần xử lý ngay. Đỏ lần thứ 3 thì danh sách được gửi cho ASM và TCKT.')+
+card('blue','TÍNH LẠI THEO HÌNH THỨC ĐÚNG','<p>Ví dụ: 1.162.000đ khai là tiền mặt, thực ra là ZaloPay. Tiền mặt sau tính lại, chênh lệch còn lại.</p><div class="btns"><span>✅ Đúng</span><span>❌ Sai</span></div>','BOT đã chỉnh số theo điều bạn kể và nhờ bạn xác nhận kết quả.')+
+card('blue','XÁC NHẬN NỘP BÙ / BÙ TRỪ','<p>Số tiền nộp bù, hình thức, nộp ngày nào, cho doanh thu ngày nào, kèm chứng từ.</p><div class="btns"><span>✅ Đúng</span><span>❌ Sai</span></div>','Cửa hàng đã nộp thiếu rồi nộp bù. BOT ghi lại để ghép hai ngày với nhau.')+
+card('blue','TIỀN CỌC NỘP NHẦM','<p>Tiền về dư so với doanh thu. Có thể là cọc của khách nộp lẫn vào.</p>','Xác nhận đây là cọc, kèm mã đơn hoặc ảnh chứng từ. Khoản cọc không bị tính là lệch và không bị thẻ đỏ.')+
+card('orange','KHOẢN TIỀN CHƯA XÁC ĐỊNH SIÊU THỊ','<p>Có khoản tiền về nhưng nội dung chuyển khoản không có mã siêu thị.</p><div class="btns"><span>Chọn siêu thị</span></div>','Nếu là tiền của cửa hàng bạn, chọn đúng siêu thị trên thẻ. BOT sẽ cộng khoản vào đúng ngày.')+
+card('blue','KHOẢN NỘP TRỄ','<p>Có khoản tiền về cho một ngày doanh thu đã chốt.</p><div class="btns"><span>Chọn ngày doanh thu</span></div>','BOT hỏi khoản này thuộc ngày doanh thu nào, hoặc là khoản khác.')+
+card('green','ĐÃ KHỚP / ĐÃ XỬ LÝ','<p>Tiền về đủ, hoặc TCKT đã xử lý xong.</p>','Chỉ để biết, không cần làm gì.')+
+'</div>'+
+'<h3>Thẻ nhắc tự cập nhật</h3>'+
+'<p>Khi bạn xử lý xong, thẻ nhắc cũ tự đổi thành “ĐÃ XỬ LÝ”. Nếu thẻ vẫn còn màu cam hoặc đỏ sau khi bạn đã trả lời, hãy Reply lại tin đó để BOT kiểm tra.</p>'+
+'<h3>Thẻ gửi trong nhóm chung</h3>'+
+'<p>Nhóm chung nhận thẻ tổng có @tên người nhận của từng cửa hàng. Việc cần làm vẫn nằm ở <b>tin riêng</b> của bạn với BOT. Chỉ ai được @ mới cần xem.</p>'}},
+
+{id:"s4",ten:"Vì sao BOT báo, vì sao cần xác nhận",html:function(){return ''+
+'<h2>Vì sao BOT báo, vì sao cần xác nhận</h2>'+
+'<p class="lead">Mỗi lần BOT nhắn đều có một lý do cụ thể. Dưới đây là những lý do thường gặp.</p>'+
+'<h3>BOT báo khi nào</h3>'+
+'<ul><li><b>Tiền về khác số khai.</b> Chênh lệch trên 25.000đ cần có giải trình. Chênh lệch từ 25.000đ trở xuống thường không cần giải trình.</li>'+
+'<li><b>Chưa có xác nhận.</b> Chưa ai trả lời thẻ 9h trước hạn 17h.</li>'+
+'<li><b>Có khoản tiền lạ.</b> Tiền về không rõ thuộc ngày nào hoặc siêu thị nào.</li>'+
+'<li><b>Thiếu chứng từ.</b> Ví dụ phí nộp tiền cần ảnh biên lai.</li></ul>'+
+'<h3>Vì sao cần bạn xác nhận</h3>'+
+'<ul><li><b>Chỉ cửa hàng biết sự việc.</b> BOT chỉ thấy con số. Bạn cho biết đó là đơn ZaloPay, tiền cọc hay nộp bù.</li>'+
+'<li><b>Có xác nhận thì không bị đỏ.</b> Cửa hàng đã trả lời đúng hạn thì không bị nhắc và không bị gửi lên ASM, TCKT.</li>'+
+'<li><b>Tránh sửa sổ hai lần.</b> Khi số đã được cửa hàng xác nhận, TCKT hạch toán một lần, không phải hỏi lại.</li></ul>'+
+'<div class="callout"><b>BOT không quy trách nhiệm</b>Thẻ gửi cho TCKT chỉ gồm: số cửa hàng khai, số ngân hàng, chênh lệch, lý do bạn nêu, chứng từ và lịch sử trao đổi. Không có mục “ai chịu”.</div>'+
+'<h3>BOT hỏi lại khi nào</h3>'+
+'<p>BOT hỏi lại khi câu trả lời chưa đủ để TCKT hiểu, ví dụ chỉ ghi “đã giải trình trên base”, chỉ ghi mã đơn mà không nói lý do, hoặc chỉ ghi “sai” mà không nói ngày nào. Bạn trả lời rõ một lần là đủ.</p>'}},
+
+{id:"s4b",ten:"Đã nộp đủ, đã giải trình trên base mà BOT vẫn nhắc?",html:function(){return explainHtml()}},
+
+{id:"s5",ten:"Cách trả lời BOT",html:function(){return ''+
+'<h2>Cách trả lời BOT</h2>'+
+'<p class="lead">Có hai cách: bấm nút trên thẻ, hoặc Reply bằng chữ.</p>'+
+'<h3>Số đã đúng</h3>'+
+'<p>Bấm <b>✅ Đúng</b>. Xong.</p>'+
+'<h3>Số khác với thực tế</h3>'+
+'<ol style="max-width:68ch"><li>Ghi số tiền mặt thực thu vào ô <b>Tiền mặt</b>.</li><li>Chọn lý do (hoặc ghi lý do bằng chữ).</li><li>Bấm <b>❌ Sai</b>.</li></ol>'+
+'<h3>Khi bấm nút không được</h3>'+
+'<p><b>Reply trực tiếp tin của BOT</b> bằng chữ. Không nhắn tin rời, vì BOT chỉ hiểu tin nằm trong đúng chuỗi trả lời.</p>'+
+'<h3>Mẫu câu Reply hay dùng</h3>'+
+'<div class="scroll"><table><thead><tr><th>Tình huống</th><th>Bạn Reply</th></tr></thead><tbody>'+
+'<tr><td>Số đúng</td><td><code>đúng</code></td></tr>'+
+'<tr><td>Sai, có ngày cụ thể</td><td><code>sai CN, thực thu 3.200.000</code></td></tr>'+
+'<tr><td>Ghi nhầm hình thức</td><td><code>đơn SAKUKO1017622 4.598.000 khách cà thẻ, ghi nhầm tiền mặt</code></td></tr>'+
+'<tr><td>Phí nộp tiền</td><td>Gửi <b>ảnh biên lai</b> kèm số tiền phí</td></tr>'+
+'<tr><td>Nộp bù</td><td>Số tiền, ngày nộp, hình thức, nộp cho doanh thu ngày nào, ảnh chứng từ</td></tr>'+
+'</tbody></table></div>'+
+'<div class="callout warn"><b>Lưu ý</b>Nếu chỉ ghi “sai”, BOT sẽ hỏi lại là sai ngày nào. Tin cho ngày khác thì ghi rõ ngày ở đầu tin, ví dụ <code>1/10: ...</code>.</div>'+
+'<h3>Cần ảnh chứng từ khi nào</h3>'+
+'<ul><li>Phí nộp tiền: bắt buộc có ảnh biên lai hoặc giấy nộp tiền.</li><li>Tiền cọc của khách: mã đơn và/hoặc ảnh chứng từ cọc.</li><li>Nộp bù: ảnh chứng từ nộp.</li></ul>'}},
+
+{id:"s6",ten:"Việc xảy ra sau khi bạn trả lời",html:function(){return ''+
+'<h2>Việc xảy ra sau khi bạn trả lời</h2>'+
+'<p class="lead">Biết thẻ của mình đi đâu giúp bạn bớt lo.</p>'+
+'<div class="scroll"><table><thead><tr><th>Bạn làm</th><th>BOT làm</th></tr></thead><tbody>'+
+'<tr><td>Bấm Đúng, tiền về khớp</td><td>Đóng case, báo cửa hàng đã về đủ.</td></tr>'+
+'<tr><td>Bấm Đúng, lệch nhỏ</td><td>Ghi nhận, báo TCKT làm tròn.</td></tr>'+
+'<tr><td>Bấm Đúng, vẫn lệch lớn</td><td>Hỏi lý do lệch.</td></tr>'+
+'<tr><td>Bấm Sai</td><td>Hỏi đơn POS, hình thức đúng, số tiền, rồi gửi thẻ tính lại để bạn xác nhận.</td></tr>'+
+'<tr><td>Giải trình đầy đủ</td><td>Gom thông tin và chứng từ, gửi TCKT.</td></tr>'+
+'<tr><td>Không trả lời</td><td>Nhắc theo chuỗi: thường, cam, đỏ. Đỏ lần 3 báo ASM và TCKT.</td></tr>'+
+'</tbody></table></div>'+
+'<h3>TCKT làm gì</h3>'+
+'<p>TCKT nhận thẻ tóm tắt và chọn Duyệt, Từ chối hoặc Chờ bổ sung. Nếu Chờ bổ sung, BOT hẹn bạn gửi chứng từ. Nếu Từ chối, bạn giải trình lại. Duyệt xong, TCKT hạch toán vào NAV và case được đóng.</p>'+
+'<h3>Chưa nộp, hẹn nộp</h3>'+
+'<p>Nếu bạn báo <b>chưa nộp</b> và nêu ngày hẹn, BOT giữ case đến hết ngày hẹn rồi mới nhắc lại. BOT vẫn báo TCKT mỗi lần để TCKT nắm.</p>'+
+'<h3>Đổi người nhận tin của cửa hàng</h3>'+
+'<p>ASM báo BOT trước 1 ngày khi đổi người nhận tin hoặc quản lý cửa hàng. Doanh thu từ ngày chuyển đổi trở đi gửi cho người mới, các ngày trước vẫn do người cũ xử lý.</p>'}},
+
+{id:"s7",ten:"Câu hỏi thường gặp",html:function(){return ''+
+'<h2>Câu hỏi thường gặp</h2>'+
+'<details><summary>Tôi bấm nhầm Đúng thì sao?</summary><p>Reply tin của BOT và nói rõ số đúng. BOT sẽ tính lại. Nếu BOT đã gửi cho TCKT, báo thêm để TCKT biết.</p></details>'+
+'<details><summary>Tin BOT gửi nằm ở đâu?</summary><p>Tin riêng: việc cần bạn làm. Nhóm chung: thẻ tổng có @ tên, chỉ xem nếu bạn được @.</p></details>'+
+'<details><summary>Tôi nghỉ hoặc đổi ca thì sao?</summary><p>Nhờ ASM báo BOT trước 1 ngày để doanh thu những ngày sau gửi đúng người.</p></details>'+
+'<details><summary>BOT hỏi lại cùng một câu nhiều lần?</summary><p>Thường vì câu trả lời chưa đủ ý. Đọc kỹ câu BOT hỏi, trả lời đủ trong một tin: số tiền, mã đơn, lý do, ảnh nếu có.</p></details>'+
+'<details><summary>Thẻ đã xử lý mà vẫn thấy đỏ?</summary><p>Reply vào tin đó, BOT sẽ kiểm tra lại. Nếu vẫn sai, nhắn người phụ trách kỹ thuật BOT.</p></details>'+
+'<details><summary>Khoản tiền về không phải của cửa hàng tôi?</summary><p>Không chọn siêu thị. Reply nói rõ là không phải, TCKT sẽ xem.</p></details>'+
+'<details><summary>BOT có phạt hay quy trách nhiệm không?</summary><p>Không. BOT chỉ ghi dữ kiện. TCKT quyết định.</p></details>'+
+'<div class="callout ok"><b>Bước cuối</b>Còn mục Liên hệ ở cuối. Bấm “Tôi đã đọc hết hướng dẫn” ở mục đó để hệ thống ghi nhận đã đọc xong.</div>'}},
+{id:"s8",ten:"Liên hệ khi cần hỗ trợ",html:lienHeHtml}
+];
+
+var ASM=[
+{id:"a1",ten:"Vai trò của ASM với BOT",html:function(){return ''+
+'<h2>Vai trò của ASM với BOT</h2>'+
+'<p class="lead">BOT gửi cho ASM các thẻ theo dõi để anh/chị nắm tình hình cửa hàng mình quản lý. Phần lớn không cần trả lời.</p>'+
+'<ul><li>BOT làm việc trực tiếp với người nhận tin của từng cửa hàng. ASM không phải xác nhận thay.</li>'+
+'<li>ASM nhắc cửa hàng khi BOT báo cửa hàng chưa phản hồi.</li>'+
+'<li>Khi cửa hàng chưa có người nhận tin và chưa có QLST, BOT gửi cho tất cả ASM. <b>ASM đầu tiên Reply</b> là người nhận cửa hàng đó.</li></ul>'+
+'<div class="callout ok"><b>BOT không quy trách nhiệm</b>Thẻ gửi ASM chỉ trình bày số liệu và tình trạng xử lý của từng cửa hàng.</div>'}},
+{id:"a2",ten:"Các thẻ ASM nhận",html:function(){return ''+
+'<h2>Các thẻ ASM nhận</h2>'+
+'<p class="lead">Chỉ gồm các cửa hàng anh/chị quản lý.</p>'+
+'<div class="scroll"><table><thead><tr><th>Thẻ</th><th>Giờ</th><th>Nội dung</th><th>Cần làm</th></tr></thead><tbody>'+
+'<tr><td>Đối soát doanh thu</td><td class="s">9h</td><td>Từng cửa hàng: tiền mặt khai, đã về, chênh lệch, người nhận, hạn phản hồi, giờ quét sao kê.</td><td>Không cần trả lời.</td></tr>'+
+'<tr><td>Cập nhật tình hình</td><td class="s">15h, 8h30</td><td>Reply thẻ 9h bằng tình hình các cửa hàng mình quản lý.</td><td>Xem.</td></tr>'+
+'<tr><td>Chưa phản hồi</td><td class="s">17h</td><td>Cửa hàng chưa trả lời BOT.</td><td>Nhắc QLST hoặc người nhận trả lời BOT.</td></tr>'+
+'<tr><td>Bảng đỏ lần 3</td><td class="s">12h</td><td>Cửa hàng bị nhắc đỏ 3 ngày chưa xong.</td><td>Yêu cầu cửa hàng giải trình trực tiếp với TCKT.</td></tr>'+
+'<tr><td>Tổng kết tuần</td><td class="s">CN 8h30</td><td>Các cửa hàng còn treo cả tuần.</td><td>Theo dõi, nhắc cửa hàng.</td></tr>'+
+'</tbody></table></div>'+
+'<h3>Cuối tuần</h3>'+
+'<p>Tiền mặt Thứ 7 và Chủ nhật nộp chung vào Thứ 2, nên thẻ cho cửa hàng gộp thành một thẻ vào sáng Thứ 2. Thứ 7 và Chủ nhật BOT không nhắc từng cửa hàng, chỉ gửi thẻ tổng cho ASM.</p>'}},
+{id:"a3",ten:"Báo đổi nhân sự cửa hàng",html:function(){return ''+
+'<h2>Báo đổi nhân sự cửa hàng</h2>'+
+'<p class="lead">BOT gửi tin cho đúng người nhận của từng ngày doanh thu. Khi người nhận đổi, ASM cần báo BOT trước.</p>'+
+'<ol style="max-width:68ch"><li>Báo trước <b>1 ngày</b> khi đổi người quản lý hoặc người nhận tin.</li>'+
+'<li>Cập nhật bảng <b>Data nhân sự-ST</b> trên base và ghi rõ ngày chuyển đổi. BOT chỉ đọc bảng này, không tự ghi.</li>'+
+'<li>Nhắn riêng BOT một câu có chữ như “đổi nhân sự”, “người nhận mới” hoặc “nghỉ việc”. BOT sẽ gửi thẻ có ô: cửa hàng, ngày chuyển đổi, tên người mới, ghi chú.</li>'+
+'<li>Gửi thẻ xong, BOT xác nhận lại và tự cập nhật cấu hình.</li></ol>'+
+'<div class="callout"><b>Mốc chuyển</b>Doanh thu từ ngày chuyển đổi trở đi gửi cho người mới. Doanh thu các ngày trước, kể cả việc còn dở, vẫn do người cũ xử lý.</div>'+
+'<p>Nếu ngày chuyển đã đến mà bảng trên base chưa đổi, BOT nhắc ASM mỗi ngày, tối đa 3 lần.</p>'}},
+{id:"a4",ten:"Vì sao cửa hàng đã nộp đủ vẫn bị nhắc",html:explainHtml},
+{id:"a5",ten:"Liên hệ khi cần hỗ trợ",html:lienHeHtml}
+];
+
+var TCKT=[
+{id:"t1",ten:"BOT gửi gì cho TCKT",html:function(){return ''+
+'<h2>BOT gửi gì cho TCKT</h2>'+
+'<p class="lead">Các thẻ và tin dành cho TCKT được gửi vào nhóm BOT TCKT.</p>'+
+'<ul><li><b>Thẻ Recap (tóm tắt đối soát)</b> cho từng case cần duyệt: số cửa hàng khai, số ngân hàng, chênh lệch, lý do, giải trình, ảnh chứng từ, lịch sử trao đổi.</li>'+
+'<li><b>Thẻ “Việc TCKT còn treo”</b> lúc 17h: case lệch tiền lẻ, case lệch lớn hoặc sai hình thức, case chờ hạch toán NAV.</li>'+
+'<li><b>Bảng tiền mặt cửa hàng</b> lúc 17h: theo từng ngày doanh thu, chia nhóm chưa nộp, nộp thiếu, thừa, lệch tiền lẻ, đủ, kèm trạng thái.</li>'+
+'<li><b>Thẻ tổng</b> các lượt 8h30, 9h, 12h, 17h, bảng đỏ lần 3 và tổng kết tuần.</li>'+
+'<li><b>Thẻ xanh “Đã khớp”</b> chỉ để biết, không có nút.</li></ul>'+
+'<div class="callout ok"><b>BOT chỉ trình bày dữ kiện</b>Thẻ Recap không có mục phân bổ hay đề xuất ai chịu. TCKT quyết định và tự hạch toán NAV.</div>'}},
+{id:"t2",ten:"Duyệt, từ chối, chờ bổ sung",html:function(){return ''+
+'<h2>Duyệt, từ chối, chờ bổ sung</h2>'+
+'<div class="scroll"><table><thead><tr><th>Bạn bấm</th><th>BOT làm</th></tr></thead><tbody>'+
+'<tr><td><b>Duyệt</b></td><td>Chuyển case sang chờ hạch toán NAV.</td></tr>'+
+'<tr><td><b>Từ chối</b> (gõ lý do vào ô)</td><td>Gửi lý do cho cửa hàng, cửa hàng giải trình lại.</td></tr>'+
+'<tr><td><b>Chờ bổ sung</b></td><td>Hẹn cửa hàng gửi thêm chứng từ và nhắc theo hẹn.</td></tr>'+
+'<tr><td>Tick <b>Đã hạch toán NAV</b> trong bảng KẾT QUẢ ĐỐI SOÁT</td><td>Đến lượt 9h sáng, BOT đóng case.</td></tr>'+
+'</tbody></table></div>'+
+'<p style="margin-top:14px">Nút trên thẻ “Việc TCKT còn treo” có tác dụng giống nút trên thẻ Recap gốc. Có nút “Duyệt tất cả” cho nhóm case lệch tiền lẻ, case sai hình thức không nằm trong nút này.</p>'+
+'<div class="callout warn"><b>Ghi chú</b>Khi cửa hàng báo “chưa nộp” và hẹn ngày nộp, BOT giữ case đến hết ngày hẹn nhưng vẫn báo TCKT mỗi lần để TCKT nắm tình hình.</div>'}},
+{id:"t3",ten:"Các loại case thường gặp",html:function(){return ''+
+'<h2>Các loại case thường gặp</h2>'+
+'<ul><li><b>Sai hình thức:</b> khoản khai tiền mặt nhưng thực tế là ZaloPay, thẻ… Cửa hàng đã xác nhận thẻ tính lại trước khi BOT chuyển TCKT.</li>'+
+'<li><b>Phí nộp tiền:</b> chỉ chuyển TCKT khi có ảnh chứng từ.</li>'+
+'<li><b>Nộp bù, bù trừ:</b> BOT hỏi đủ số tiền, ngày, hình thức, đơn POS và chứng từ rồi cửa hàng xác nhận.</li>'+
+'<li><b>Tiền cọc nộp nhầm:</b> ghi vào sổ cọc treo, không tính lệch, tự bù trừ ở kỳ sau.</li>'+
+'<li><b>Khoản nộp trễ:</b> tiền về cho ngày đã chốt. Cửa hàng chọn ngày doanh thu hoặc “khoản khác”. Ngày đã chốt hoặc khoản khác thì BOT gửi TCKT dữ kiện.</li>'+
+'<li><b>Khoản chưa xác định siêu thị:</b> khi bật nhắc, BOT nhắc cửa hàng chọn hai lần rồi mới gửi thẻ cho TCKT chọn siêu thị.</li>'+
+'<li><b>Giải trình ngoài quy tắc:</b> BOT hỏi lại một lần, vẫn không rõ thì chuyển TCKT kèm dữ kiện.</li></ul>'}},
+{id:"t4",ten:"Vì sao cửa hàng bị nhắc dù đã nộp đủ",html:function(){return explainHtml()+'<div class="callout"><b>Dành cho TCKT</b>Case đã đủ tiền nhưng chưa có xác nhận của cửa hàng thì BOT vẫn tính là chờ cửa hàng. Cần bỏ qua một case thì nhắn người phụ trách kỹ thuật BOT, đừng tự sửa dữ liệu.</div>'}},
+{id:"t5",ten:"Liên hệ khi cần hỗ trợ",html:lienHeHtml}
+];
+
+var SECT={ch:CH,asm:ASM,tckt:TCKT};
+var ROLE_TXT={ch:"Cửa hàng",asm:"ASM",tckt:"TCKT"};
+var S=CH;
+
+/* ===== trạng thái ===== */
+var me=null, done={}, db=null, user=null, isAdmin=false, cur=0, unsub=null;
+var $=function(i){return document.getElementById(i)};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function fmt(t){if(!t)return '–';var d=new Date(t);return d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+
+function show(v){["loginView","appView","adminView"].forEach(function(i){$(i).hidden=(i!==v)});window.scrollTo(0,0)}
+
+/* ===== lưu tiến độ ===== */
+var saving=false,pending=false;
+function save(){
+  ls('bot_me',JSON.stringify({me:me,done:done}));
+  if(!db||!me)return;
+  if(saving){pending=true;return}
+  saving=true;
+  var n=Object.keys(done).length;
+  var data={ma:me.ma,role:me.role||"ch",ten:me.ten,done:done,soMucDa:n,tong:S.length,xong:n===S.length,last:Date.now(),first:me.first||Date.now()};
+  db.doc("views/"+me.ma).set(data).catch(function(){}).then(function(){saving=false;if(pending){pending=false;save()}});
+}
+
+/* ===== giao diện ===== */
+function renderToc(){
+  $("toc").innerHTML=S.map(function(s,i){
+    return '<button type="button" data-i="'+i+'" class="'+(done[s.id]?'done':'')+'" '+(i===cur?'aria-current="true"':'')+'><span class="dot">'+(done[s.id]?'✓':(i+1))+'</span><span>'+esc(s.ten)+'</span></button>';
+  }).join('');
+}
+function renderDoc(){
+  var s=S[cur], last=cur===S.length-1;
+  var btnTxt=last?'Tôi đã đọc hết hướng dẫn':'Tôi đã hiểu mục này';
+  var foot='<div class="foot"><div>'+(done[s.id]?'<span class="read">✓ Đã đọc</span>':'')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+
+    (cur>0?'<button class="btn ghost" type="button" id="prev">← Mục trước</button>':'')+
+    (done[s.id]?'':'<button class="btn" type="button" id="ok">'+btnTxt+'</button>')+
+    (done[s.id]&&!last?'<button class="btn" type="button" id="next">Mục tiếp →</button>':'')+
+    '</div></div>';
+  $("doc").innerHTML=s.html()+foot;
+  var ok=$("ok");if(ok)ok.onclick=function(){done[s.id]=Date.now();save();render(true)};
+  var nx=$("next");if(nx)nx.onclick=function(){cur++;render()};
+  var pv=$("prev");if(pv)pv.onclick=function(){cur--;render()};
+}
+function renderTop(){
+  var n=Object.keys(done).length;
+  $("who").innerHTML=esc(me.role==="ch"?me.ma:ROLE_TXT[me.role])+' <span>· '+esc(me.ten)+'</span>';
+  $("barFill").style.width=(100*n/S.length)+'%';
+  $("progressTxt").textContent=n===S.length?'Đã đọc hết ✓':'Đã đọc '+n+'/'+S.length+' mục';
+}
+function render(advance){
+  if(advance&&cur<S.length-1&&Object.keys(done).length<S.length){cur++}
+  renderTop();renderToc();renderDoc();
+  if(advance)$("doc").focus({preventScroll:true});
+  if(advance)window.scrollTo({top:0});
+}
+$("toc").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;cur=+b.dataset.i;render();window.scrollTo({top:0})});
+
+/* ===== đăng nhập ===== */
+$("dsCH").innerHTML=DS_CH.map(function(c){return '<option value="'+c+'">'}).join('');
+$("vaiTro").addEventListener("change",function(){
+  var r=$("vaiTro").value;
+  $("boxMa").hidden=(r!=="ch");
+  $("dsNV").innerHTML=(DS_NV[r]||[]).map(function(n){return '<option value="'+esc(n)+'">'}).join('');
+});
+function slug(s){return s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/gi,"d").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60)}
+$("loginForm").addEventListener("submit",function(e){
+  e.preventDefault();
+  var role=$("vaiTro").value, ten=$("tenNV").value.trim(), ma;
+  if(ten.length<2){$("loginErr").textContent="Nhập họ và tên người đọc.";return}
+  if(role==="ch"){
+    ma=$("maCH").value.trim().toUpperCase();
+    if(!/^[SC]\d{4}$/.test(ma)){$("loginErr").textContent="Mã cửa hàng gồm 1 chữ và 4 số, ví dụ S1006.";return}
+  }else{
+    var sl=slug(ten);
+    if(!sl){$("loginErr").textContent="Nhập họ và tên bằng chữ.";return}
+    ma=role.toUpperCase()+"-"+sl;
+  }
+  $("loginErr").textContent="";
+  S=SECT[role];
+  me={role:role,ma:ma,ten:ten,first:Date.now()};
+  var start=function(prev){
+    done=(prev&&prev.done)||{};
+    if(prev&&prev.first)me.first=prev.first;
+    var f=0;for(var i=0;i<S.length;i++){if(!done[S[i].id]){f=i;break}}cur=f;
+    save();enter();
+  };
+  if(db){db.doc("views/"+ma).get().then(function(s){start(s.exists?s.data():null)},function(){start(null)})}
+  else start(null);
+});
+$("btnOut").onclick=function(){ls('bot_me',null);me=null;done={};S=CH;$("boxMa").hidden=false;$("loginForm").reset();show("loginView")};
+function enter(){show("appView");$("btnAdmin").hidden=!isAdmin;render()}
+
+/* ===== trang theo dõi ===== */
+function openAdmin(){
+  show("adminView");
+  if(unsub)unsub();
+  var note=$("adminNote");
+  note.textContent="Đang tải…";
+  var timer=setTimeout(function(){note.textContent="Chưa kết nối được dữ liệu. Thử lại sau ít phút."},10000);
+  unsub=db.collection("views").onSnapshot(function(snap){
+    clearTimeout(timer);
+    var m={};snap.docs.forEach(function(d){m[d.id]=d.data()});
+    var codes=DS_CH.slice(), known={};
+    ["asm","tckt"].forEach(function(ro){DS_NV[ro].forEach(function(n){var id=ro.toUpperCase()+"-"+slug(n);known[id]={role:ro,ten:n};if(codes.indexOf(id)<0)codes.push(id)})});
+    Object.keys(m).forEach(function(k){if(codes.indexOf(k)<0)codes.push(k)});
+    /* cửa hàng trước, rồi ASM, rồi TCKT */
+    var roleOf=function(c){return (m[c]&&m[c].role)||(known[c]&&known[c].role)||"ch"};
+    var rank=function(c){var ro=roleOf(c);return ro==="ch"?0:ro==="asm"?1:2};
+    codes.sort(function(a,b){return rank(a)-rank(b)});
+    var xong=0,dang=0,chua=0;
+    $("rows").innerHTML=codes.map(function(c){
+      var r=m[c],st,cls,ro=roleOf(c);
+      if(!r){chua++;st="Chưa vào";cls="no"}
+      else if(r.xong){xong++;st="Đã đọc hết";cls="ok"}
+      else{dang++;st="Đang đọc";cls="warn"}
+      var name=ro==="ch"?c:ROLE_TXT[ro];
+      return '<tr><td><b>'+esc(name)+'</b></td><td>'+(r?esc(r.ten||''):(known[c]?esc(known[c].ten):'–'))+'</td><td>'+(r?(r.soMucDa||0)+'/'+(r.tong||'?'):'–')+'</td><td class="s">'+(r?fmt(r.last):'–')+'</td><td><span class="pill '+cls+'">'+st+'</span></td></tr>';
+    }).join('');
+    $("stats").innerHTML='<div><b>'+xong+'</b>đã đọc hết</div><div><b>'+dang+'</b>đang đọc</div><div><b>'+chua+'</b>chưa vào</div><div><b>'+codes.length+'</b>cửa hàng</div>';
+    note.textContent="Cập nhật theo thời gian thực. Danh sách có sẵn gồm 27 cửa hàng, 3 ASM và 1 TCKT; người khác tự xuất hiện khi họ vào đọc.";
+  },function(){clearTimeout(timer);note.textContent="Không đọc được dữ liệu theo dõi."});
+}
+$("btnAdmin").onclick=openAdmin;
+$("btnBack").onclick=function(){if(unsub){unsub();unsub=null}enter()};
+
+/* ===== khởi động ===== */
+function boot(){
+  var saved=null;try{saved=JSON.parse(ls('bot_me')||'null')}catch(e){}
+  if(saved&&saved.me){me=saved.me;if(!me.role)me.role="ch";S=SECT[me.role]||CH;done=saved.done||{};enter();
+    if(db){db.doc("views/"+me.ma).get().then(function(s){if(s.exists){var d=s.data().done||{};var ch=false;Object.keys(d).forEach(function(k){if(!done[k]){done[k]=d[k];ch=true}});if(ch)render()}}).catch(function(){})}
+  }else show("loginView");
+}
+show("loginView");
+if(window.claude&&claude.use){
+  Promise.all([claude.use("db"),claude.use("user")]).then(function(r){
+    db=r[0];user=r[1];
+    isAdmin=!!(user&&user.canEdit&&user.canEdit());
+    boot();
+  }).catch(function(){boot()});
+}else boot();
+})();
+</script>
